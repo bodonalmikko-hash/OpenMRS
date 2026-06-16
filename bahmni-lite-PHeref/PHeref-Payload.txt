@@ -1,0 +1,265 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:patient-ana",
+      "resource": {
+        "resourceType": "Patient",
+        "identifier": [
+          {
+            "system": "https://philhealth.gov.ph/id",
+            "value": "78-658064775-3"
+          }
+        ],
+        "name": [
+          {
+            "family": "Reyes",
+            "given": [
+              "Ana",
+              "Luisa"
+            ]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1988-03-12",
+        "address": [
+          {
+            "text": "Area 4, Brgy. Mabuhay, Kalibo, Aklan"
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "+639198765432"
+          }
+        ],
+        "contact": [
+          {
+            "name": {
+              "text": "Roberto Reyes"
+            },
+            "relationship": [
+              {
+                "text": "Husband"
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      }
+    },
+
+    {
+      "fullUrl": "urn:uuid:practitioner-maria",
+      "resource": {
+        "resourceType": "Practitioner",
+        "name": [
+          {
+            "text": "Dr. Maria Villanueva"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Practitioner"
+      }
+    },
+
+    {
+      "fullUrl": "urn:uuid:role-maria",
+      "resource": {
+        "resourceType": "PractitionerRole",
+        "practitioner": {
+          "reference": "urn:uuid:practitioner-maria"
+        },
+        "code": [
+          {
+            "text": "Primary Care Physician"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "PractitionerRole"
+      }
+    },
+
+    {
+      "fullUrl": "urn:uuid:org-khc",
+      "resource": {
+        "resourceType": "Organization",
+        "identifier": [
+          {
+            "system": "https://nhfr.doh.gov.ph",
+            "value": "042-CHC-0087"
+          }
+        ],
+        "name": "Kalibo Health Center",
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "(043) 756-2233"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Organization"
+      }
+    },
+
+    {
+      "fullUrl": "urn:uuid:org-rstmh",
+      "resource": {
+        "resourceType": "Organization",
+        "identifier": [
+          {
+            "system": "https://nhfr.doh.gov.ph",
+            "value": "042-DH-0012"
+          }
+        ],
+        "name": "Dr. Rafael S. Tumbokon Memorial Hospital"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Organization"
+      }
+    },
+
+    {
+      "fullUrl": "urn:uuid:condition-preeclampsia",
+      "resource": {
+        "resourceType": "Condition",
+        "clinicalStatus": {
+          "coding": [
+            {
+              "code": "active",
+              "system": "http://terminology.hl7.org/CodeSystem/condition-clinical"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "urn:uuid:patient-ana"
+        },
+        "code": {
+          "text": "Severe Pre-eclampsia"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Condition"
+      }
+    },
+
+    {
+      "fullUrl": "urn:uuid:clinical-history",
+      "resource": {
+        "resourceType": "Observation",
+        "status": "final",
+        "subject": {
+          "reference": "urn:uuid:patient-ana"
+        },
+        "code": {
+          "text": "Clinical History"
+        },
+        "note": [
+          {
+            "text": "Severe headache, dizziness, blurring of vision, epigastric pain for 2 days. Pregnant 32 weeks AOG (G2P1). LMP 2025-11-13. EDD 2026-08-20."
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    },
+
+    {
+      "fullUrl": "urn:uuid:bp",
+      "resource": {
+        "resourceType": "Observation",
+        "status": "final",
+        "subject": {
+          "reference": "urn:uuid:patient-ana"
+        },
+        "code": {
+          "text": "Blood Pressure"
+        },
+        "valueString": "180/110 mmHg"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    },
+
+    {
+      "fullUrl": "urn:uuid:referral",
+      "resource": {
+        "resourceType": "ServiceRequest",
+        "status": "active",
+        "intent": "order",
+        "priority": "urgent",
+        "subject": {
+          "reference": "urn:uuid:patient-ana"
+        },
+        "requester": {
+          "reference": "urn:uuid:role-maria"
+        },
+        "performer": [
+          {
+            "reference": "urn:uuid:org-rstmh"
+          }
+        ],
+        "reasonReference": [
+          {
+            "reference": "urn:uuid:condition-preeclampsia"
+          }
+        ],
+        "category": [
+          {
+            "text": "Emergency"
+          }
+        ],
+        "code": {
+          "text": "Treatment/Procedure"
+        },
+        "note": [
+          {
+            "text": "Severe Pre-eclampsia for IV antihypertensive, seizure prophylaxis and maternal-fetal monitoring."
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "ServiceRequest"
+      }
+    },
+
+    {
+      "fullUrl": "urn:uuid:task-referral",
+      "resource": {
+        "resourceType": "Task",
+        "status": "requested",
+        "intent": "order",
+        "for": {
+          "reference": "urn:uuid:patient-ana"
+        },
+        "focus": {
+          "reference": "urn:uuid:referral"
+        },
+        "owner": {
+          "reference": "urn:uuid:org-rstmh"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Task"
+      }
+    }
+  ]
+}
