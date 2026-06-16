@@ -3,7 +3,7 @@
     "instanceOf":"bahmni.template.registration",
     "description": "Bahmni Patient Registration App",
     "config" : {
-        "mandatoryPersonAttributes" : [],
+        "mandatoryPersonAttributes" : ["nationality", "religion", "race", "pwdId", "disabilityType", "pwdExpirationDate"],
         "patientInformation": {},
         "defaultIdentifierPrefix": "ABC",
         "showMiddleName": true,
@@ -42,7 +42,25 @@
         },
         "addressHierarchy": {
             "showAddressFieldsTopDown": false,
-            "strictAutocompleteFromLevel": "postalCode"
+            "strictAutocompleteFromLevel": "postalCode",
+            "addressFields": [
+                "address1",
+                "address2",
+                "cityVillage",
+                "countyDistrict",
+                "stateProvince",
+                "postalCode",
+                "country"
+            ],
+            "addressFieldLabels": {
+                "address1": "Address Line 1",
+                "address2": "Address Line 2",
+                "cityVillage": "City/Municipality",
+                "countyDistrict": "Barangay",
+                "stateProvince": "Province",
+                "postalCode": "Postal Code",
+                "country": "Country"
+            }
         }
     }
 }
