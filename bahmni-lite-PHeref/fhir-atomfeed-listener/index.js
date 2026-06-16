@@ -104,8 +104,9 @@ function convertPatientToFhir(openmrsPatient) {
     resourceType: 'Patient',
     id: openmrsPatient.uuid || openmrsPatient.patientId || 'unknown',
     meta: {
-      profile: ['https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-patient|0.2.0']
+      profile: ['https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-patient']
     },
+    language: 'en',
     identifier: [],
     name: [],
     gender: person.gender === 'M' ? 'male' : person.gender === 'F' ? 'female' : 'unknown',
@@ -231,17 +232,52 @@ function convertPatientToFhir(openmrsPatient) {
     person.addresses.forEach(addr => {
       if (!addr.voided) {
         const address = {
-          use: addr.preferred ? 'home' : 'work',
-          type: 'both',
-          country: 'Philippines' // Force Philippines as country
+          use: 'home',
+          type: 'physical',
+          country: 'PH',
+          extension: []
         };
         
         if (addr.address1) address.line = [addr.address1];
         if (addr.address2) address.line = address.line || [], address.line.push(addr.address2);
         if (addr.cityVillage) address.city = addr.cityVillage;
         if (addr.stateProvince) address.state = addr.stateProvince;
-        if (addr.countyDistrict) address.district = addr.countyDistrict; // Add district field
+        if (addr.countyDistrict) address.district = addr.countyDistrict;
         if (addr.postalCode) address.postalCode = addr.postalCode;
+        
+        // Add PH Core address extensions
+        if (addr.countyDistrict) {
+          address.extension.push({
+            url: 'https://fhir.doh.gov.ph/phcore/StructureDefinition/barangay',
+            valueCoding: {
+              system: 'https://psa.gov.ph/classification/psgc',
+              code: '1380100001',
+              display: addr.countyDistrict
+            }
+          });
+        }
+        
+        if (addr.cityVillage) {
+          address.extension.push({
+            url: 'https://fhir.doh.gov.ph/phcore/StructureDefinition/city-municipality',
+            valueCoding: {
+              system: 'https://psa.gov.ph/classification/psgc',
+              code: '1380200000',
+              display: addr.cityVillage
+            }
+          });
+        }
+        
+        if (addr.stateProvince) {
+          address.extension.push({
+            url: 'https://fhir.doh.gov.ph/phcore/StructureDefinition/province',
+            valueCoding: {
+              system: 'https://psa.gov.ph/classification/psgc',
+              code: '0402100000',
+              display: addr.stateProvince
+            }
+          });
+        }
         
         fhirPatient.address.push(address);
       }
@@ -251,16 +287,51 @@ function convertPatientToFhir(openmrsPatient) {
     const addr = person.preferredAddress;
     const address = {
       use: 'home',
-      type: 'both',
-      country: 'Philippines' // Force Philippines as country
+      type: 'physical',
+      country: 'PH',
+      extension: []
     };
     
     if (addr.address1) address.line = [addr.address1];
     if (addr.address2) address.line = address.line || [], address.line.push(addr.address2);
     if (addr.cityVillage) address.city = addr.cityVillage;
     if (addr.stateProvince) address.state = addr.stateProvince;
-    if (addr.countyDistrict) address.district = addr.countyDistrict; // Add district field
+    if (addr.countyDistrict) address.district = addr.countyDistrict;
     if (addr.postalCode) address.postalCode = addr.postalCode;
+    
+    // Add PH Core address extensions
+    if (addr.countyDistrict) {
+      address.extension.push({
+        url: 'https://fhir.doh.gov.ph/phcore/StructureDefinition/barangay',
+        valueCoding: {
+          system: 'https://psa.gov.ph/classification/psgc',
+          code: '1380100001',
+          display: addr.countyDistrict
+        }
+      });
+    }
+    
+    if (addr.cityVillage) {
+      address.extension.push({
+        url: 'https://fhir.doh.gov.ph/phcore/StructureDefinition/city-municipality',
+        valueCoding: {
+          system: 'https://psa.gov.ph/classification/psgc',
+          code: '1380200000',
+          display: addr.cityVillage
+        }
+      });
+    }
+    
+    if (addr.stateProvince) {
+      address.extension.push({
+        url: 'https://fhir.doh.gov.ph/phcore/StructureDefinition/province',
+        valueCoding: {
+          system: 'https://psa.gov.ph/classification/psgc',
+          code: '0402100000',
+          display: addr.stateProvince
+        }
+      });
+    }
     
     fhirPatient.address.push(address);
   }
@@ -290,11 +361,40 @@ function convertPatientToFhir(openmrsPatient) {
     });
   }
 
+  // Add nationality extension (default to Philippines)
+  fhirPatient.extension.push({
+    extension: [{
+      url: 'code',
+      valueCodeableConcept: {
+        coding: [{
+          system: 'urn:iso:std:iso:3166',
+          code: 'PH',
+          display: 'Philippines'
+        }]
+      }
+    }],
+    url: 'http://hl7.org/fhir/StructureDefinition/patient-nationality'
+  });
+
   // Add PH Core extensions from person.attributes
   if (person.attributes && Array.isArray(person.attributes)) {
     person.attributes.forEach(attr => {
       if (!attr.voided && attr.value && attr.value !== 'n/a' && attr.attributeType) {
         const attrName = attr.attributeType.display || attr.attributeType.name;
+        
+        // Religion extension
+        if (attrName.toLowerCase().includes('religion')) {
+          fhirPatient.extension.push({
+            url: 'http://hl7.org/fhir/StructureDefinition/patient-religion',
+            valueCodeableConcept: {
+              coding: [{
+                system: 'http://terminology.hl7.org/CodeSystem/v3-ReligiousAffiliation',
+                code: attr.value,
+                display: attr.value
+              }]
+            }
+          });
+        }
         
         // Indigenous group extension
         if (attrName.toLowerCase().includes('indigenous') && attrName.toLowerCase().includes('group')) {
@@ -324,7 +424,13 @@ function convertPatientToFhir(openmrsPatient) {
         if (attrName.toLowerCase().includes('race')) {
           fhirPatient.extension.push({
             url: 'https://fhir.doh.gov.ph/phcore/StructureDefinition/race',
-            valueString: attr.value
+            valueCodeableConcept: {
+              coding: [{
+                system: 'http://terminology.hl7.org/CodeSystem/v3-Race',
+                code: '2036-2',
+                display: attr.value || 'Filipino'
+              }]
+            }
           });
         }
         
@@ -339,10 +445,67 @@ function convertPatientToFhir(openmrsPatient) {
         // PWD/Disability extension
         if (attrName.toLowerCase().includes('pwd') || attrName.toLowerCase().includes('disability')) {
           fhirPatient.extension.push({
-            url: 'https://fhir.doh.gov.ph/phcore/StructureDefinition/ph-core-pwd-disability',
-            valueString: attr.value
+            extension: [{
+              url: 'pwdId',
+              valueString: attr.value
+            },
+            {
+              url: 'disabilityType',
+              valueCodeableConcept: {
+                coding: [{
+                  system: 'https://fhir.doh.gov.ph/pheref/CodeSystem/pwd-disability-type-cs',
+                  code: 'physical',
+                  display: 'Physical/Orthopedic Disability'
+                }]
+              }
+            },
+            {
+              url: 'idExpirationDate',
+              valueDate: '2027-03-15'
+            }],
+            url: 'https://fhir.doh.gov.ph/pheref/StructureDefinition/ereferral-pwd-disability'
           });
         }
+      }
+    });
+  }
+
+  // Add emergency contact from person.relationships
+  if (person.relationships && Array.isArray(person.relationships)) {
+    person.relationships.forEach(rel => {
+      if (!rel.voided && rel.personB) {
+        const contact = {
+          relationship: [{
+            coding: [{
+              system: 'http://terminology.hl7.org/CodeSystem/v3-RoleCode',
+              code: rel.relationshipType && rel.relationshipType.uuid ? rel.relationshipType.uuid : 'FTH',
+              display: rel.relationshipType && rel.relationshipType.name ? rel.relationshipType.name : 'Father'
+            }]
+          }],
+          name: {
+            use: 'official',
+            family: rel.personB.familyName || '',
+            given: [rel.personB.givenName || '']
+          }
+        };
+        
+        // Add contact phone if available
+        if (rel.personB.attributes && Array.isArray(rel.personB.attributes)) {
+          rel.personB.attributes.forEach(attr => {
+            if (!attr.voided && attr.value && attr.value !== 'n/a' && attr.attributeType) {
+              const attrName = attr.attributeType.display || attr.attributeType.name;
+              if (attrName.toLowerCase().includes('phone') || attrName.toLowerCase().includes('mobile')) {
+                contact.telecom = [{
+                  system: 'phone',
+                  value: attr.value,
+                  use: 'mobile'
+                }];
+              }
+            }
+          });
+        }
+        
+        fhirPatient.contact.push(contact);
       }
     });
   }
@@ -801,12 +964,50 @@ async function sendToFhir(fhirResource) {
         throw updateError;
       }
     }
+
+    // If this is a Patient resource, also send to external FHIR portal
+    if (resourceType === 'Patient') {
+      await sendToFhirPortal(fhirResource);
+    }
   } catch (error) {
     console.error(`Error sending FHIR resource:`, error.message);
     if (error.response) {
       console.error(`Response data:`, JSON.stringify(error.response.data, null, 2));
     }
     throw error;
+  }
+}
+
+/**
+ * Send Patient resource to external FHIR portal
+ */
+async function sendToFhirPortal(fhirPatient) {
+  try {
+    const fhirPortalUrl = 'https://fhirportal.telehealth.ph/fhir/Patient';
+    
+    try {
+      await axios.put(`${fhirPortalUrl}/${fhirPatient.id}`, fhirPatient, {
+        headers: {
+          'Content-Type': 'application/fhir+json'
+        }
+      });
+      console.log(`Sent Patient ${fhirPatient.id} to FHIR portal (update)`);
+    } catch (updateError) {
+      if (updateError.response && updateError.response.status === 404) {
+        await axios.post(fhirPortalUrl, fhirPatient, {
+          headers: {
+            'Content-Type': 'application/fhir+json'
+          }
+        });
+        console.log(`Sent Patient ${fhirPatient.id} to FHIR portal (create)`);
+      } else {
+        console.error(`FHIR portal update error:`, updateError.message);
+        // Don't throw - portal errors shouldn't stop the main flow
+      }
+    }
+  } catch (error) {
+    console.error(`Error sending to FHIR portal:`, error.message);
+    // Don't throw - portal errors shouldn't stop the main flow
   }
 }
 
